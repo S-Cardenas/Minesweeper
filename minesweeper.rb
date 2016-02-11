@@ -1,12 +1,14 @@
 require 'byebug'
 class Board
 
+  attr_accessor :grid
+
   def inspect
   end
 
   def initialize(size=9, bomb_number = 9)
     @size = size
-    @grid = Array.new(size) {Array.new(size) {Tile.new}}
+    @grid = Array.new(size) {Array.new(size) {Tile.new(self)}}
     @bomb_number = bomb_number
   end
 
@@ -20,7 +22,7 @@ class Board
       end
     end
     values = values.shuffle
-    @grid.each do |row|
+    grid.each do |row|
       row.each do |tile|
         tile.value = values.pop
       end
@@ -28,7 +30,7 @@ class Board
   end
 
   def render
-    @grid.each do |row|
+    grid.each do |row|
       line = []
       row.each do |tile|
         line << tile.value
@@ -38,7 +40,9 @@ class Board
     ''
   end
 
-  def is_a_bomb?
+  def [](pos)
+    x, y = pos
+    grid[x][y]
   end
 
   def check_adjacent(pos)
@@ -49,14 +53,23 @@ class Tile
 
   attr_accessor :revealed, :value
 
-  def initialize
+  def initialize(board)
     @revealed = false
     @value = nil
     @flag = false
+    @board = board
   end
 
   def reveal
     @revealed = true
+  end
+
+  def current_pos
+    @board.grid.each_with_index do |row, idx1|
+      row.each_with_index do |tile, idx2|
+        return [idx1, idx2] if self == tile
+      end
+    end
   end
 
   def revealed?
@@ -72,9 +85,48 @@ class Tile
       @value
     elsif @flag
       'F'
-    elsif @value = ' '
+    elsif @value == ' '
+      '*'
+    else
       '*'
     end
+  end
+
+  def neighbors
+
+
+  end
+
+end
+
+class Player
+
+  def initialize(name)
+    @name = name
+  end
+
+  def prompt_pos
+    puts "Please enter the position to explore:(e.g., '2,3')"
+    print "> "
+  end
+
+  def prompt_action
+    puts "Please enter 'reveal or 'flag': ('R' or 'F')"
+    print "> "
+  end
+
+  def get_pos
+    prompt_pos
+    parse(STDIN.gets.chomp)
+  end
+
+  def parse(string)
+    string.split(",").map { |x| Integer(x) }
+  end
+
+  def get_action
+    prompt_action
+    gets.chomp
   end
 
 end
