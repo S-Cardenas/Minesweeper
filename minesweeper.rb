@@ -10,6 +10,7 @@ class Board
     @size = size
     @grid = Array.new(size) {Array.new(size) {Tile.new(self)}}
     @bomb_number = bomb_number
+    self.populate
   end
 
   def populate
@@ -24,7 +25,7 @@ class Board
     values = values.shuffle
     grid.each do |row|
       row.each do |tile|
-        tile.value = values.pop
+        tile.true_value = values.pop
       end
     end
   end
@@ -40,25 +41,54 @@ class Board
     ''
   end
 
+  def render2
+    grid.each do |row|
+      line = []
+      row.each do |tile|
+        line << tile.true_value
+      end
+      p line
+    end
+    ''
+  end
+
   def [](pos)
     x, y = pos
     grid[x][y]
-  end
-
-  def check_adjacent(pos)
   end
 end
 
 class Tile
 
-  attr_accessor :revealed, :value, :flag
+  attr_accessor :revealed, :true_value, :flag, :display_value
 
   def initialize(board)
-    @revealed = true
-    @value = nil
+    @revealed = false
+    @true_value = nil
+    @display_value = '*'
     @flag = false
     @board = board
   end
+
+  def value
+    if !@revealed
+      @display_value
+    elsif @revealed
+        debugger
+      if neighbor_bomb_count == 0
+        @display_value = @true_value
+      else
+        @display_value = neighbor_bomb_count
+      end
+    end
+    return @display_value
+  end
+
+  # def change_display_value
+  #   if revealed? && neighbor_bomb_count > 0
+  #     @display_value = neighbor_bomb_count
+  #   end
+  # end
 
   def reveal
     @revealed = true
@@ -78,23 +108,12 @@ class Tile
 
   def flagged
     @flag = true
+    @display_value = "F"
   end
 
-  def value
-    if @revealed
-      @value
-    elsif @flag
-      'F'
-    elsif @value == ' '
-      '*'
-    else
-      '*'
-    end
-  end
 
   def neighbors
     location = current_pos
-    buddies = []
     neigh_coor = []
     ((location[0]-1)..(location[0]+1)).each do |i|
       next if i < 0
@@ -121,7 +140,7 @@ end
 
 class Player
 
-  def initialize(name)
+  def initialize(name = "Borata")
     @name = name
   end
 
@@ -153,7 +172,9 @@ end
 
 class Minesweeper
 
-  def initialize(player)
+  attr_accessor :board
+
+  def initialize(player = Player.new)
     @player = player
     @board = Board.new
   end
@@ -162,13 +183,30 @@ class Minesweeper
     condition = true
     @board.grid.each do |row|
       row.each do |tile|
-        if tile.value == 'B' && (!tile.revealed || !tile.flagged) 
-          condition = false
+        next if tile.value == 'B'
+        if !tile.revealed
+          return condition = false
         end
       end
     end
+    condition
   end
 
+  def take_turn
+    @board.render
+    @board.render2
+    until game_won?
+      tile = @player.get_pos
+      action = @player.get_action
+      if action == 'F'
+        @board[tile].flagged
+      elsif action == 'R'
+        @board[tile].reveal
+      end
+      @board.render
+      @board.render2
+    end
 
+  end
 
 end
