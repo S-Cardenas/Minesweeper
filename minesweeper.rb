@@ -1,7 +1,7 @@
 require 'byebug'
 class Board
 
-  attr_accessor :grid
+  attr_accessor :grid, :size
 
   def inspect
   end
@@ -51,10 +51,10 @@ end
 
 class Tile
 
-  attr_accessor :revealed, :value
+  attr_accessor :revealed, :value, :flag
 
   def initialize(board)
-    @revealed = false
+    @revealed = true
     @value = nil
     @flag = false
     @board = board
@@ -93,8 +93,28 @@ class Tile
   end
 
   def neighbors
+    location = current_pos
+    buddies = []
+    neigh_coor = []
+    ((location[0]-1)..(location[0]+1)).each do |i|
+      next if i < 0
+      next if i >= @board.size
+      ((location[1]-1)..(location[1]+1)).each do |j|
+        next if j < 0
+        next if j >= @board.size
+        neigh_coor << [i,j]
+      end
+    end
+    neigh_coor.delete(location)
+    neigh_coor
+  end
 
-
+  def neighbor_bomb_count
+    bomb_count = 0
+    neighbors.each do |neighbor|
+      bomb_count += 1 if @board[neighbor].value == "B"
+    end
+    bomb_count
   end
 
 end
@@ -128,5 +148,27 @@ class Player
     prompt_action
     gets.chomp
   end
+
+end
+
+class Minesweeper
+
+  def initialize(player)
+    @player = player
+    @board = Board.new
+  end
+
+  def game_won?
+    condition = true
+    @board.grid.each do |row|
+      row.each do |tile|
+        if tile.value == 'B' && (!tile.revealed || !tile.flagged) 
+          condition = false
+        end
+      end
+    end
+  end
+
+
 
 end
